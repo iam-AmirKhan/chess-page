@@ -10,9 +10,13 @@ import {
   ChevronRight, CalendarClock, Menu, Eye, EyeOff, Trophy,
   Save, Plus, ExternalLink, Edit2, ToggleLeft, ToggleRight,
   MessageCircle, Phone, Tag, DollarSign, Globe, Swords, MapPin,
-  Bell, Star, Mail, Copy
+  Bell, Star, Mail, Copy, LifeBuoy, Download, Upload
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// ── Constants ─────────────────────────────────
+const CARD = 'bg-[#1a1f26] border border-[#2a3340] shadow-sm';
+const INPUT_CLS = 'w-full px-4 py-2 bg-[#0d1117] border border-[#2a3340] rounded-lg text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder:text-[#3a4452]';
 
 // ── Helpers ──────────────────────────────────
 function fmt(d) {
@@ -24,19 +28,7 @@ function getStatus(expiry) {
   return new Date(expiry) > new Date() ? 'active' : 'expired';
 }
 
-// ── Dummy seed data ───────────────────────────
-const DUMMY_MEMBERS = [
-  { id: 'm1', name: 'Rahim Ahmed', chess_username: 'rahimchess99', email: 'rahim@gmail.com', mobile: '01711234567', trx_id: '8H3A9KT3DF', district: 'Dhaka', purchase_date: '2025-12-01', expiry_date: '2026-12-01' },
-  { id: 'm2', name: 'Karim Hossain', chess_username: 'karimonfire', email: 'karim@yahoo.com', mobile: '01812345678', trx_id: '7B2C8LN1QX', district: 'Chattogram', purchase_date: '2025-11-15', expiry_date: '2026-11-15' },
-  { id: 'm3', name: 'Fatema Begum', chess_username: 'fatema_chess', email: 'fatema@gmail.com', mobile: '01923456789', trx_id: '5K7P2MR9TY', district: 'Sylhet', purchase_date: '2025-10-20', expiry_date: '2026-10-20' },
-  { id: 'm4', name: 'Sabbir Rahman', chess_username: 'sabbir_bd', email: 'sabbir@hotmail.com', mobile: '01634567890', trx_id: '3X9D6WH4AB', district: 'Rajshahi', purchase_date: '2025-09-05', expiry_date: '2026-09-05' },
-  { id: 'm5', name: 'Nasrin Akter', chess_username: 'nasrin_moves', email: 'nasrin@gmail.com', mobile: '01745678901', trx_id: '9Q1F5RV7CD', district: 'Khulna', purchase_date: '2024-03-10', expiry_date: '2025-03-10' },
-  { id: 'm6', name: 'Jamal Uddin', chess_username: 'jamal_king', email: 'jamal@gmail.com', mobile: '01856789012', trx_id: '2H6G8JL3EF', district: 'Gazipur', purchase_date: '2024-12-01', expiry_date: '2025-12-01' },
-];
-const DUMMY_PENDING = [
-  { id: 'p1', name: 'Shohel Rana', chess_username: 'shohel_bd', email: 'shohel@gmail.com', mobile: '01967890123', trx_id: '4M2N7PK5GH', district: 'Dhaka', payment_method: 'bKash', status: 'pending', submitted_at: new Date().toISOString() },
-  { id: 'p2', name: 'Tania Islam', chess_username: 'tania_queen', email: 'tania@gmail.com', mobile: '01378901234', trx_id: '6T4S9UW8IJ', district: 'Sylhet', payment_method: 'Nagad', status: 'pending', submitted_at: new Date(Date.now() - 3600000).toISOString() },
-];
+// ── Dummy seed data removed ───────────────────────────
 
 // ── Nav items ────────────────────────────
 const NAV = [
@@ -47,6 +39,8 @@ const NAV = [
   { id: 'all', label: 'All Members', icon: List },
   { id: 'tournaments', label: 'Tournaments', icon: Trophy },
   { id: 'accounts', label: 'Family Plans', icon: Mail },
+  { id: 'tickets', label: 'Support Tickets', icon: LifeBuoy },
+  { id: 'reviews', label: 'User Reviews', icon: Star },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -94,21 +88,41 @@ export default function AdminDashboard() {
   const [pending, setPending] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-      return [...stored, ...DUMMY_PENDING];
-    } catch { return DUMMY_PENDING; }
+      return stored;
+    } catch { return []; }
   });
   const [members, setMembers] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('chess_members'));
-      if (stored && stored.length > 0) return stored;
+      const stored = JSON.parse(localStorage.getItem('chess_members') || '[]');
+      return stored;
     } catch {}
-    return DUMMY_MEMBERS;
+    return [];
   });
+  
+  const DUMMY_PASSWORD = 'admin123';
+
+  const confirmWithPassword = (onConfirm, message) => {
+    if (!window.confirm(message)) return;
+    const pass = window.prompt("Security Check: Enter Admin Password to confirm this destructive action:");
+    if (pass === DUMMY_PASSWORD) {
+      onConfirm();
+    } else if (pass !== null) {
+      alert("Incorrect password! Action cancelled.");
+    }
+  };
 
   const updateMembers = (updater) => {
     setMembers(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
       localStorage.setItem('chess_members', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const updatePending = (updater) => {
+    setPending(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      localStorage.setItem('pending_orders', JSON.stringify(next));
       return next;
     });
   };
@@ -134,8 +148,76 @@ export default function AdminDashboard() {
     });
   };
   const [showPlanForm, setShowPlanForm] = useState(false);
-  const [planForm, setPlanForm] = useState({ id: '', alias: '', password: '', parent_username: '', capacity: 6, renewal_date: new Date().toISOString() });
+  const [planForm, setPlanForm] = useState({ id: '', alias: '', password: '', parent_username: '', capacity: 6, renewal_date: new Date().toISOString(), note: '' });
   const [showPwd, setShowPwd] = useState({});
+
+  // Tickets
+  const [tickets, setTickets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('chess_tickets') || '[]');
+    } catch { return []; }
+  });
+  const updateTickets = (updater) => {
+    setTickets(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      localStorage.setItem('chess_tickets', JSON.stringify(next));
+      return next;
+    });
+  };
+  
+  // Reviews
+  const [reviews, setReviews] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('chess_reviews') || '[]');
+    } catch { return []; }
+  });
+  const updateReviews = (updater) => {
+    setReviews(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      localStorage.setItem('chess_reviews', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewForm, setReviewForm] = useState(null);
+  const [isAddingReview, setIsAddingReview] = useState(false);
+
+  // ── CSV UTILS ────────────────────────────────────────────────────────
+  const exportToCSV = (data, filename) => {
+    if (!data.length) return alert('No data to export');
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(obj => Object.values(obj).map(v => `"${v}"`).join(','));
+    const csvContent = [headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const handleImportCSV = (e, onComplete) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+      const result = lines.slice(1).filter(l => l.trim()).map(line => {
+        const values = line.split(',').map(v => v.replace(/^"|"$/g, ''));
+        return headers.reduce((obj, h, i) => {
+          obj[h] = values[i];
+          return obj;
+        }, {});
+      });
+      onComplete(result);
+      alert(`Imported ${result.length} items successfully!`);
+    };
+    reader.readAsText(file);
+    e.target.value = null; // reset
+  };
 
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({ ...settings });
@@ -159,28 +241,36 @@ export default function AdminDashboard() {
       try {
         const stored = JSON.parse(localStorage.getItem('pending_orders') || '[]');
         if (stored.length > 0) {
-          const existingIds = new Set(pending.map(p => p.id));
-          const newOnes = stored.filter(s => !existingIds.has(s.id));
-          if (newOnes.length > 0) setPending(prev => [...newOnes, ...prev]);
+          setPending(prev => {
+            const currentIds = new Set(prev.map(p => p.id));
+            const newOnes = stored.filter(s => !currentIds.has(s.id));
+            if (newOnes.length > 0) {
+              return [...newOnes, ...prev]; // Prepend new results
+            }
+            return prev;
+          });
         }
       } catch {}
     }, 2000);
     return () => clearInterval(poll);
-  }, [pending]);
+  }, []); // Only start on mount
 
   const stats = useMemo(() => {
     const active = members.filter(m => getStatus(m.expiry_date) === 'active').length;
     const expired = members.filter(m => getStatus(m.expiry_date) === 'expired').length;
     const pCount = pending.filter(p => p.status === 'pending').length;
+    const tCount = tickets.filter(t => t.status === 'open').length;
     return { 
       total: members.length, 
       active, 
       expired, 
       pending: pCount, 
+      tickets: tCount,
+      reviews: reviews.filter(r => r.status === 'pending').length,
       allTimeRevenue: members.length * settings.price,
       activeRevenue: active * settings.price
     };
-  }, [pending, members, settings.price]);
+  }, [pending, members, settings.price, tickets, reviews]);
 
   const approvePending = (order) => {
     if (!window.confirm(`Approve ${order.name}?`)) return;
@@ -191,27 +281,15 @@ export default function AdminDashboard() {
       district: order.district || '',
       purchase_date: new Date().toISOString(), expiry_date: expiry,
     }, ...prev]);
-    setPending(prev => prev.map(p => p.id === order.id ? { ...p, status: 'approved' } : p));
-    try {
-      const stored = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-      localStorage.setItem('pending_orders', JSON.stringify(stored.filter(s => s.id !== order.id)));
-    } catch {}
+    updatePending(prev => prev.filter(p => p.id !== order.id));
   };
   const rejectPending = (id) => {
     if (!window.confirm('Reject this request?')) return;
-    setPending(prev => prev.map(p => p.id === id ? { ...p, status: 'rejected' } : p));
-    try {
-      const stored = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-      localStorage.setItem('pending_orders', JSON.stringify(stored.filter(s => s.id !== id)));
-    } catch {}
+    updatePending(prev => prev.filter(p => p.id !== id));
   };
   const deletePending = (id) => {
     if (!window.confirm('Delete permanently?')) return;
-    setPending(prev => prev.filter(p => p.id !== id));
-    try {
-      const stored = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-      localStorage.setItem('pending_orders', JSON.stringify(stored.filter(s => s.id !== id)));
-    } catch {}
+    updatePending(prev => prev.filter(p => p.id !== id));
   };
   const extendMember = (member) => {
     const days = parseInt(window.prompt('Extend by how many days?', '365'));
@@ -244,6 +322,7 @@ export default function AdminDashboard() {
       show_toaster: settingsForm.show_toaster !== false,
       toaster_message: settingsForm.toaster_message || 'Someone from {city} just got Diamond! 🎉',
       show_sponsor: settingsForm.show_sponsor === true,
+      whatsapp_link: settingsForm.whatsapp_link || 'https://wa.link/4l5rr7',
     });
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
@@ -293,12 +372,10 @@ export default function AdminDashboard() {
     );
   }, [pending, search]);
 
-  const BG = 'bg-[#1e2228]';
-  const CARD = 'bg-[#252b33] border border-[#323a44]';
-  const INPUT_CLS = 'w-full px-3 py-2.5 bg-[#1a1f26] border border-[#323a44] rounded-lg text-sm text-white focus:ring-2 focus:ring-[#81b64c] outline-none transition-all placeholder:text-[#555]';
+  const MAIN_BG = 'bg-[#1e2228]';
 
   return (
-    <div className={`min-h-screen ${BG} flex text-white`}>
+    <div className={`min-h-screen ${MAIN_BG} flex text-white`}>
       {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -323,6 +400,11 @@ export default function AdminDashboard() {
               {item.id === 'pending' && stats.pending > 0 && (
                 <span className="ml-auto bg-amber-500 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                   {stats.pending}
+                </span>
+              )}
+              {item.id === 'tickets' && stats.tickets > 0 && (
+                <span className="ml-auto bg-[#81b64c] text-black text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                  {stats.tickets}
                 </span>
               )}
             </button>
@@ -536,9 +618,26 @@ export default function AdminDashboard() {
           {/* ── MEMBERS TABLE ── */}
           {['active', 'expired', 'all'].includes(section) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#6a7a8e]">{filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''}</span>
-                {search && <span className="text-xs text-[#81b64c] font-bold">· Filtering by "{search}"</span>}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-[#81b64c]" />
+                    Active Members ({members.length})
+                  </h2>
+                  <p className="text-sm text-[#6a7a8e]">Verified recurring and one-time Diamond users.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                   <button onClick={() => exportToCSV(members, 'chess_members')} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#312e2b] border border-[#403d39] text-[#c3c3c0] rounded-lg text-xs font-bold hover:text-white transition-all">
+                    <Download className="w-3.5 h-3.5" /> Export
+                  </button>
+                  <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[#312e2b] border border-[#403d39] text-[#c3c3c0] rounded-lg text-xs font-bold hover:text-white transition-all cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" /> Import
+                    <input type="file" accept=".csv" className="hidden" onChange={e => handleImportCSV(e, data => updateMembers([...members, ...data]))} />
+                  </label>
+                   <button onClick={() => confirmWithPassword(() => updateMembers([]), 'Delete EVERY active member record? This cannot be undone.')} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-all">
+                    <Trash2 className="w-3.5 h-3.5" /> Clear All
+                  </button>
+                </div>
               </div>
 
               {/* Edit Member Form */}
@@ -839,34 +938,26 @@ export default function AdminDashboard() {
           {/* ── ACCOUNTS (FAMILY PLANS) ── */}
           {section === 'accounts' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-white flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-blue-400" />
+                    <Users className="w-5 h-5 text-blue-400" />
                     Family Plan Tracking
                   </h2>
-                  <p className="text-sm text-[#6a7a8e]">Manage your Chess.com master accounts and Gmail aliases securely.</p>
+                  <p className="text-sm text-[#6a7a8e]">Internal management of shared Diamond accounts.</p>
                 </div>
-                <button
-                  onClick={() => {
-                    // Try to auto-increment alias for the user based on last created plan
-                    let nextAlias = 'owner+plan01@gmail.com';
-                    if (familyPlans.length > 0) {
-                      const last = familyPlans[familyPlans.length - 1].alias;
-                      const match = last.match(/(.+\+)(\D+)?(\d+)(@.+)/);
-                      if (match) {
-                        const numStr = match[3];
-                        const nextNum = String(parseInt(numStr) + 1).padStart(numStr.length, '0');
-                        nextAlias = `${match[1]}${match[2] || ''}${nextNum}${match[4]}`;
-                      }
-                    }
-                    setPlanForm({ id: '', alias: nextAlias, password: '', parent_username: '', capacity: 6, renewal_date: new Date().toISOString() });
-                    setShowPlanForm(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-sm hover:bg-blue-500/20 transition-all"
-                >
-                  <Plus className="w-4 h-4" /> Add New Plan
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => exportToCSV(familyPlans, 'family_plans')} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#312e2b] border border-[#403d39] text-[#c3c3c0] rounded-lg text-xs font-bold hover:text-white transition-all">
+                    <Download className="w-3.5 h-3.5" /> Export
+                  </button>
+                  <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[#312e2b] border border-[#403d39] text-[#c3c3c0] rounded-lg text-xs font-bold hover:text-white transition-all cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" /> Import
+                    <input type="file" accept=".csv" className="hidden" onChange={e => handleImportCSV(e, data => updateFamilyPlans([...familyPlans, ...data]))} />
+                  </label>
+                  <button onClick={() => setShowPlanForm(true)} className="flex items-center gap-2 px-5 py-2.5 bg-[#81b64c] text-black font-black rounded-xl text-sm hover:shadow-lg transition-all active:scale-95">
+                    <Plus className="w-4 h-4" /> Add New Plan
+                  </button>
+                </div>
               </div>
 
               {showPlanForm && (
@@ -894,6 +985,10 @@ export default function AdminDashboard() {
                     <div>
                       <label className="text-[10px] font-bold text-[#6a7a8e] uppercase tracking-widest block mb-1">Next Renewal Date *</label>
                       <input type="date" className={INPUT_CLS} value={planForm.renewal_date?.slice(0, 10) || ''} onChange={e => setPlanForm(p => ({ ...p, renewal_date: e.target.value ? new Date(e.target.value).toISOString() : p.renewal_date }))} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-bold text-[#6a7a8e] uppercase tracking-widest block mb-1">Internal Notes (e.g. tracking info)</label>
+                      <textarea value={planForm.note || ''} onChange={e => setPlanForm(p => ({ ...p, note: e.target.value }))} placeholder="Add any extra details here..." rows={2} className={`${INPUT_CLS} resize-none`} />
                     </div>
                   </div>
                   <div className="flex gap-3 pt-4">
@@ -970,6 +1065,11 @@ export default function AdminDashboard() {
                               <span className="font-bold flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5" /> Renewal</span>
                               <span className="font-bold">{fmt(plan.renewal_date)} {renewalUrgent && '(Soon!)'}</span>
                             </div>
+                            {plan.note && (
+                              <div className="px-2 py-1.5 bg-[#1a1f26] border border-[#2a3340] rounded-lg">
+                                <p className="text-[10px] text-[#81b64c] font-medium italic truncate">Note: {plan.note}</p>
+                              </div>
+                            )}
                           </div>
 
                           {/* Associated Members */}
@@ -1007,6 +1107,227 @@ export default function AdminDashboard() {
                   })}
                 </div>
               )}
+            </motion.div>
+          )}
+          
+          {/* ── REVIEWS ── */}
+          {section === 'reviews' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    <Star className="w-5 h-5 text-[#ffbf61]" />
+                    User Reviews Moderation
+                  </h2>
+                  <p className="text-sm text-[#6a7a8e]">Approve or edit reviews before they appear on the homepage.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setReviewForm({ author: '', text: '', stars: 5, status: 'approved', created_at: new Date().toISOString(), id: 'rev_' + Date.now() });
+                    setIsAddingReview(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#ffbf61] text-black font-black rounded-xl text-sm hover:bg-amber-400 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add Custom Review
+                </button>
+              </div>
+
+              {(isAddingReview || editingReviewId) && reviewForm && (
+                <div className={`${CARD} rounded-xl p-5 space-y-4 mb-6 border-[#ffbf61]/30 shadow-xl overflow-hidden relative`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-5">
+                     <Star className="w-24 h-24 text-[#ffbf61] rotate-12" />
+                  </div>
+                  <h3 className="font-black text-white text-sm relative z-10">{isAddingReview ? 'Create Custom Review' : 'Edit Review Content'}</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#6a7a8e] uppercase tracking-widest block mb-1">Author Name</label>
+                      <input type="text" className={INPUT_CLS} value={reviewForm.author} onChange={e => setReviewForm(p => ({...p, author: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#6a7a8e] uppercase tracking-widest block mb-1">Stars (1-5)</label>
+                      <input type="number" min={1} max={5} className={INPUT_CLS} value={reviewForm.stars} onChange={e => setReviewForm(p => ({...p, stars: Number(e.target.value)}))} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-bold text-[#6a7a8e] uppercase tracking-widest block mb-1">Review Text</label>
+                      <textarea rows={3} className={`${INPUT_CLS} resize-none`} value={reviewForm.text} onChange={e => setReviewForm(p => ({...p, text: e.target.value}))} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2 relative z-10">
+                    <button 
+                      onClick={() => {
+                        if (isAddingReview) {
+                          updateReviews([reviewForm, ...reviews]);
+                        } else {
+                          updateReviews(prev => prev.map(r => r.id === editingReviewId ? reviewForm : r));
+                        }
+                        setEditingReviewId(null);
+                        setReviewForm(null);
+                        setIsAddingReview(false);
+                      }}
+                      className="px-6 py-2 bg-[#ffbf61] text-black rounded-lg font-black text-xs hover:bg-amber-400 transition-all flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" /> {isAddingReview ? 'Add Review' : 'Save Changes'}
+                    </button>
+                    <button onClick={() => { setEditingReviewId(null); setReviewForm(null); setIsAddingReview(false); }} className="px-5 py-2 bg-[#1a1f26] border border-[#2a3340] text-white rounded-lg font-bold text-xs hover:bg-[#2a3340] transition-all">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {reviews.length === 0 ? (
+                  <div className={`${CARD} rounded-2xl p-20 text-center col-span-full`}>
+                    <Star className="w-12 h-12 text-[#2a3340] mx-auto mb-4" />
+                    <p className="text-[#6a7a8e] font-bold">No user reviews yet.</p>
+                  </div>
+                ) : (
+                  reviews.map(review => (
+                    <div key={review.id} className={`${CARD} rounded-2xl p-5 border-l-4 ${review.status === 'approved' ? 'border-l-[#81b64c]' : 'border-l-amber-500 animate-pulse-subtle'}`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-black text-white">{review.author}</h4>
+                            <div className="flex text-[#ffbf61] gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`w-3 h-3 ${i < review.stars ? 'fill-current' : 'opacity-20'}`} />
+                              ))}
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              review.status === 'approved' ? 'bg-[#81b64c]/10 text-[#81b64c] border border-[#81b64c]/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            }`}>
+                              {review.status}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-[#4a5668] font-bold uppercase">{fmt(review.created_at)}</p>
+                        </div>
+                      </div>
+                      <div className="bg-[#1a1f26] border border-[#2a3340] rounded-xl p-4 mb-4">
+                        <p className="text-sm text-[#c3c3c0] leading-relaxed italic">"{review.text}"</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 pt-2 border-t border-[#2a3340]">
+                        <p className="text-[10px] text-[#4a5668] font-mono lowercase">ID: {review.id.slice(-8)}</p>
+                        <div className="flex gap-2">
+                          {review.status !== 'approved' && (
+                            <button 
+                              onClick={() => updateReviews(prev => prev.map(r => r.id === review.id ? {...r, status: 'approved'} : r))}
+                              className="px-4 py-1.5 bg-[#81b64c]/10 text-[#81b64c] border border-[#81b64c]/20 rounded-lg text-[10px] font-black uppercase hover:bg-[#81b64c] hover:text-black transition-all"
+                            >
+                              Approve
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => { setEditingReviewId(review.id); setReviewForm({...review}); }}
+                            className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => { if(window.confirm('Delete review?')) updateReviews(prev => prev.filter(r => r.id !== review.id)); }}
+                            className="p-1.5 bg-red-400/10 text-red-400 border border-red-400/20 rounded-lg hover:bg-red-400 hover:text-white transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── TICKETS ── */}
+          {section === 'tickets' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-4">
+                  <span className="text-xs text-[#6a7a8e]">{tickets.filter(t => t.status === 'open').length} open tickets</span>
+                  <span className="text-xs text-[#6a7a8e]">{tickets.filter(t => t.status === 'closed').length} resolved</span>
+                </div>
+                <button onClick={() => confirmWithPassword(() => updateTickets([]), 'Clear all tickets?')} className="text-[10px] font-black uppercase text-red-400/60 hover:text-red-400 tracking-widest flex items-center gap-1">
+                   <Trash2 className="w-3 h-3" /> Clear List
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {tickets.length === 0 ? (
+                  <div className={`${CARD} rounded-2xl p-20 text-center col-span-full`}>
+                    <LifeBuoy className="w-12 h-12 text-[#2a3340] mx-auto mb-4" />
+                    <p className="text-[#6a7a8e] font-bold">No tickets yet.</p>
+                  </div>
+                ) : (
+                  tickets.map(ticket => (
+                    <div key={ticket.id} className={`${CARD} rounded-2xl p-5 relative overflow-hidden group border-l-4 ${ticket.status === 'open' ? 'border-l-amber-500' : 'border-l-[#4a5668]'}`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-black text-white">{ticket.name}</h4>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              ticket.status === 'open' 
+                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' 
+                                : 'bg-[#4a5668]/10 text-[#6a7a8e] border border-[#2a3340]'
+                            }`}>
+                              {ticket.status}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              {ticket.issue_type}
+                            </span>
+                            {ticket.urgency && (
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                ticket.urgency === 'urgent' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                ticket.urgency === 'moderate' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                                ticket.urgency === 'normal' ? 'bg-[#81b64c]/10 text-[#81b64c] border border-[#81b64c]/20' :
+                                'bg-[#4a5668]/10 text-[#c3c3c0] border border-[#4a5668]/20'
+                              }`}>
+                                {ticket.urgency}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-[#6a7a8e] font-mono">
+                            {ticket.chess_username} · <span className="text-[#81b64c] font-bold">{ticket.trx_id}</span>
+                            {ticket.email && <span className="ml-2 opacity-60">· {ticket.email}</span>}
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-[#4a5668] font-bold uppercase">{fmt(ticket.created_at)}</p>
+                      </div>
+
+                      <div className="bg-[#1a1f26] border border-[#2a3340] rounded-xl p-4 mb-4">
+                        <p className="text-sm text-[#c3c3c0] leading-relaxed whitespace-pre-wrap">
+                          {ticket.message}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 pt-2 border-t border-[#2a3340]">
+                        <p className="text-[10px] text-[#4a5668] font-mono">{ticket.id}</p>
+                        <div className="flex gap-2">
+                          {ticket.status === 'open' ? (
+                            <button 
+                              onClick={() => updateTickets(prev => prev.map(t => t.id === ticket.id ? {...t, status: 'closed'} : t))}
+                              className="px-4 py-1.5 bg-[#81b64c]/10 text-[#81b64c] border border-[#81b64c]/20 rounded-lg text-xs font-bold hover:bg-[#81b64c] hover:text-black transition-all"
+                            >
+                              Resolve Ticket
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => updateTickets(prev => prev.map(t => t.id === ticket.id ? {...t, status: 'open'} : t))}
+                              className="px-4 py-1.5 bg-[#4a5668]/10 text-[#6a7a8e] border border-[#2a3340] rounded-lg text-xs font-bold hover:text-white transition-all"
+                            >
+                              Reopen
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => { if(window.confirm('Delete this ticket?')) updateTickets(prev => prev.filter(t => t.id !== ticket.id)); }}
+                            className="p-1.5 bg-red-400/10 text-red-400 border border-red-400/20 rounded-lg hover:bg-red-400 hover:text-white transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </motion.div>
           )}
 

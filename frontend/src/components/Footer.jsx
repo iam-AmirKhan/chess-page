@@ -6,7 +6,7 @@ import { useSiteSettings } from '../context/SiteSettingsContext';
 
 export default function Footer() {
   const { settings } = useSiteSettings();
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20want%20Chess.com%20Diamond%20membership.`;
+  const whatsappUrl = settings.whatsapp_link || `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20want%20Chess.com%20Diamond.`;
 
   const enabledMFS = [
     { show: settings.show_bkash !== false, color: '#e2136e', icon: '/mfs/bkash.svg', label: 'bKash', numberKey: 'bkash_number' },
@@ -65,6 +65,7 @@ export default function Footer() {
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'Tournaments', to: '/tournaments' },
                 { label: 'Member List', to: '/members' },
+                { label: 'Submit a Ticket', to: '/support' },
               ].map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} className="text-sm text-[#c3c3c0] hover:text-[#81b64c] transition-colors flex items-center gap-2 group">
@@ -106,7 +107,7 @@ export default function Footer() {
                 <a href={settings.messenger_group} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3 bg-[#262421] border border-[#403d39] hover:border-[#00B2FF]/40 rounded-xl transition-all group">
                   <div className="w-8 h-8 rounded-lg bg-[#00B2FF]/10 flex items-center justify-center group-hover:bg-[#00B2FF] transition-colors">
-                    <Users className="w-4 h-4 text-[#00B2FF] group-hover:text-white" />
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-[#00B2FF] group-hover:fill-white transition-colors"><path d="M12 2.04c-5.5 0-10 4.25-10 9.5 0 3 1.45 5.67 3.73 7.37.19.14.3.36.3.6v2.54c0 .48.51.78.93.55l2.84-1.55c.21-.11.45-.14.67-.09 1.14.28 2.34.43 3.53.43 5.5 0 10-4.25 10-9.5S17.5 2.04 12 2.04zm4.8 7.35l-3.23 4.18c-.4.53-1.15.53-1.55 0l-1.92-2.5-3.6 2.5a.3.3 0 01-.45-.37l3.23-4.18c.4-.53 1.15-.53 1.55 0l1.92 2.5 3.6-2.5a.3.3 0 01.45.37z" /></svg>
                   </div>
                   <div>
                     <p className="text-xs font-black text-white mb-0.5">Messenger Group</p>
@@ -125,10 +126,23 @@ export default function Footer() {
             © {new Date().getFullYear()} ChessPremiumBD. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs font-bold text-[#555]">
+            <Link to="/admin/login" className="hover:text-[#c3c3c0] transition-colors uppercase tracking-widest text-[9px]">Admin Portal</Link>
             <span>Developed in Bangladesh 🇧🇩</span>
           </div>
         </div>
       </div>
+      {/* ── WhatsApp Float (Site-wide) ─────────────────── */}
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        id="whatsapp-float"
+        aria-label="Chat on WhatsApp"
+        className="fixed bottom-8 right-6 z-50 bg-[#25D366] hover:bg-[#20ba56] text-white px-5 py-3.5 rounded-full shadow-2xl flex items-center gap-2.5 font-bold transition-all transform hover:-translate-y-1 group active:scale-95"
+      >
+        <MessageCircle className="w-5 h-5 fill-current" />
+        <span className="hidden sm:inline text-sm">Chat with us</span>
+      </a>
     </footer>
   );
 }

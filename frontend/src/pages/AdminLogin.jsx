@@ -33,7 +33,7 @@ export default function AdminLogin() {
       sessionStorage.setItem('chess_admin', 'true');
       navigate('/admin/dashboard', { replace: true });
     } else {
-      setError('Incorrect email or password. Try: admin@chess.com / admin123');
+      setError('Incorrect email or password. Please check your credentials.');
     }
     setLoading(false);
   };
@@ -64,10 +64,7 @@ export default function AdminLogin() {
             </div>
           </div>
 
-          {/* Demo hint */}
-          <div className="mb-5 p-3 bg-[#81b64c]/10 border border-[#81b64c]/20 rounded-lg text-xs text-[#81b64c] font-medium">
-            <span className="font-black">Demo:</span> admin@chess.com · admin123
-          </div>
+
 
           {error && (
             <div className="mb-5 p-3 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300 text-xs font-medium">

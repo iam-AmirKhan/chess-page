@@ -278,7 +278,7 @@ export default function HowItWorks() {
               Buy Diamond — ৳{settings.price?.toLocaleString() || '1499'}
             </Link>
             <a
-              href="https://api.whatsapp.com/send?phone=8801XXXXXXXXX&text=Hi%2C%20I%20have%20a%20question%20about%20ChessPremiumBD."
+              href={settings.whatsapp_link || `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20have%20a%20question%20about%20ChessPremiumBD.`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-4 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] rounded-xl font-bold transition-all hover:bg-[#25D366]/20 flex items-center justify-center gap-2"

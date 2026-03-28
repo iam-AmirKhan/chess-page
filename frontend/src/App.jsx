@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AdminRoute } from './context/AuthContext';
 import { SiteSettingsProvider } from './context/SiteSettingsContext';
 
@@ -12,6 +12,7 @@ import HowItWorks from './pages/HowItWorks';
 import Tournaments from './pages/Tournaments';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import Support from './pages/Support';
 import NotFound from './pages/NotFound';
 
 // Layout
@@ -47,7 +48,8 @@ function App() {
             <Route path="/members" element={<PublicLayout><Members /></PublicLayout>} />
             <Route path="/how-it-works" element={<PublicLayout><HowItWorks /></PublicLayout>} />
             <Route path="/tournaments" element={<PublicLayout><Tournaments /></PublicLayout>} />
-
+            <Route path="/support" element={<PublicLayout><Support /></PublicLayout>} />
+            <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
             <Route path="/admin/login" element={<AdminLayout><AdminLogin /></AdminLayout>} />
             <Route
               path="/admin/dashboard"

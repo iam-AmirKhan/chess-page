@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS = {
   coupon_discount: 1000,
   site_name: 'ChessPremiumBD',
   whatsapp_number: '8801XXXXXXXXX',
+  whatsapp_link: 'https://wa.link/4l5rr7',
   facebook_page: 'https://www.facebook.com/chesspremiumbd',
   messenger_group: 'https://m.me/j/AbYDUMMYMESSENGERGROUPLINK',
   show_1v1_section: true,

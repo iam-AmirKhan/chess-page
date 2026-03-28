@@ -24,14 +24,7 @@ function fmtDate(d) {
   try { return format(d.toDate ? d.toDate() : new Date(d), 'dd MMM yyyy'); } catch { return '—'; }
 }
 
-const DUMMY_MEMBERS = [
-  { id: 'm1', name: 'Rahim Ahmed', chess_username: 'rahimchess99', email: 'rahim@gmail.com', mobile: '01711234567', expiry_date: '2026-12-01', purchase_date: '2025-12-01', district: 'Dhaka' },
-  { id: 'm2', name: 'Karim Hossain', chess_username: 'karimonfire', email: 'karim@yahoo.com', mobile: '01812345678', expiry_date: '2026-11-15', purchase_date: '2025-11-15', district: 'Chattogram' },
-  { id: 'm3', name: 'Fatema Begum', chess_username: 'fatema_chess', email: 'fatema@gmail.com', mobile: '01923456789', expiry_date: '2026-10-20', purchase_date: '2025-10-20', district: 'Sylhet' },
-  { id: 'm4', name: 'Sabbir Rahman', chess_username: 'sabbir_bd', email: 'sabbir@hotmail.com', mobile: '01634567890', expiry_date: '2026-09-05', purchase_date: '2025-09-05', district: 'Rajshahi' },
-  { id: 'm5', name: 'Nasrin Akter', chess_username: 'nasrin_moves', email: 'nasrin@gmail.com', mobile: '01745678901', expiry_date: '2025-03-10', purchase_date: '2024-03-10', district: 'Khulna' },
-  { id: 'm6', name: 'Jamal Uddin', chess_username: 'jamal_king', email: 'jamal@gmail.com', mobile: '01856789012', expiry_date: '2025-12-01', purchase_date: '2024-12-01', district: 'Gazipur' },
-];
+// ── Dummy seed data removed ───────────────────────────
 
 const PAGE_SIZE = 12;
 
@@ -58,7 +51,7 @@ export default function Members() {
       const stored = JSON.parse(localStorage.getItem('chess_members'));
       if (stored && stored.length > 0) return stored;
     } catch {}
-    return DUMMY_MEMBERS;
+    return [];
   });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);

@@ -122,7 +122,7 @@ export default function PurchaseForm() {
   const originalPrice = settings.original_price;
   const couponCode = settings.coupon_code;
   const couponDiscount = settings.coupon_discount;
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20completed%20payment%20of%20৳${price}%20for%20Chess.com%20Diamond.`;
+  const whatsappUrl = settings.whatsapp_link || `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20completed%20payment%20of%20৳${price}%20for%20Chess.com%20Diamond.`;
 
   // Filter MFS options to only those enabled in settings
   const availableMFS = MFS_OPTIONS.filter(m => settings[m.showKey] !== false);
@@ -158,9 +158,33 @@ export default function PurchaseForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ── Spammer protection: 3 attempts per 12 hours ──
+    const now = Date.now();
+    const twelveHoursMs = 12 * 60 * 60 * 1000;
+    try {
+      let attempts = JSON.parse(localStorage.getItem('chess_purchase_attempts') || '[]');
+      // Purge old attempts
+      attempts = attempts.filter(t => now - t < twelveHoursMs);
+      
+      if (attempts.length >= 3) {
+        alert("You have reached the maximum number of submissions (3) for the last 12 hours to prevent spam. Please contact us via WhatsApp if this is an error.");
+        return;
+      }
+      
+      // We'll record this attempt after successful validation
+      window._chess_temp_attempts = attempts;
+    } catch { }
+
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setStatus('submitting');
+
+    // Record the attempt now that validation passed
+    if (window._chess_temp_attempts) {
+      window._chess_temp_attempts.push(now);
+      localStorage.setItem('chess_purchase_attempts', JSON.stringify(window._chess_temp_attempts));
+    }
 
     await new Promise(res => setTimeout(res, 700));
 
@@ -179,25 +203,31 @@ export default function PurchaseForm() {
     try {
       const existing = JSON.parse(localStorage.getItem('pending_orders') || '[]');
       localStorage.setItem('pending_orders', JSON.stringify([order, ...existing]));
-    } catch { }
-
-    // Also try Firestore if available
-    try {
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('../firebase');
-      if (db) {
-        await addDoc(collection(db, 'pending_orders'), {
-          ...form, package: `Diamond - ৳${price} BDT`,
-          coupon_code: couponCode, original_price: originalPrice,
-          coupon_discount: couponDiscount, final_price: price,
-          status: 'pending', submitted_at: serverTimestamp(),
-        });
+      
+      // Also try Firestore if available (optional)
+      try {
+        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        if (db) {
+          await addDoc(collection(db, 'pending_orders'), {
+            ...order,
+            submitted_at: serverTimestamp(),
+          });
+        }
+      } catch (e) {
+        console.warn('Firestore write failed, using localStorage only:', e);
       }
-    } catch { }
 
-    setStatus('success');
-    setForm(INITIAL);
-    setScreenshot(null); setScreenshotPreview(null); setErrors({});
+      setStatus('success');
+      setForm(INITIAL);
+      setScreenshot(null); 
+      setScreenshotPreview(null); 
+      setErrors({});
+    } catch (err) {
+      console.error('Submission failed:', err);
+      alert('Internal error saving order. Please try again or contact support.');
+      setStatus('idle');
+    }
   };
 
   if (status === 'success') {

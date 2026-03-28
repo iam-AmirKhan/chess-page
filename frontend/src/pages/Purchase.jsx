@@ -24,7 +24,7 @@ export default function Purchase() {
     document.title = 'Buy Diamond — ChessPremiumBD';
   }, []);
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20need%20help%20with%20Chess.com%20Diamond.`;
+  const whatsappUrl = settings.whatsapp_link || `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20need%20help%20with%20Chess.com%20Diamond.`;
 
   return (
     <div className="min-h-screen py-10 lg:py-14">

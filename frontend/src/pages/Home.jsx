@@ -28,16 +28,14 @@ const TRUST_BADGES = [
   { icon: Star, label: '500+ Happy Players', color: 'text-blue-400' },
 ];
 
-// Dummy recent members for live feed
-const DUMMY_RECENT = [
-  { id: '1', name: 'Rahim Ahmed', chess_username: 'rahimchess99', approved_at: new Date(Date.now() - 1000 * 60 * 30) },
-  { id: '2', name: 'Karim Hossain', chess_username: 'karimonfire', approved_at: new Date(Date.now() - 1000 * 60 * 90) },
-  { id: '3', name: 'Fatema Begum', chess_username: 'fatema_chess', approved_at: new Date(Date.now() - 1000 * 60 * 180) },
-  { id: '4', name: 'Sabbir Rahman', chess_username: 'sabbir_bd', approved_at: new Date(Date.now() - 1000 * 60 * 360) },
-  { id: '5', name: 'Nasrin Akter', chess_username: 'nasrin_moves', approved_at: new Date(Date.now() - 1000 * 60 * 720) },
-  { id: '6', name: 'Jamal Uddin', chess_username: 'jamal_king', approved_at: new Date(Date.now() - 1000 * 60 * 1440) },
+const REVIEWS = [
+  { id: 1, text: "Got my Diamond in 3 minutes! Super fast and reliable. Tysm ❤️", author: "@shahriar_chess_bd", initials: "S", color: "bg-blue-500" },
+  { id: 2, text: "I was hesitant at first because of the price, but it's 100% legit. The 1v1 bets are sick too.", author: "@rakib_khan99", initials: "R", color: "bg-orange-500" },
+  { id: 3, text: "Best reseller in BD. Customer support replied instantly on WhatsApp when I had an issue.", author: "@fariha_moves", initials: "F", color: "bg-purple-500" },
+  { id: 4, text: "Bought the 1-year family plan. Cheaper than buying directly. Seamless experience.", author: "@tanvir_hasan", initials: "T", color: "bg-emerald-500" },
 ];
 
+// Dummy recent members removed
 function maskName(fullName) {
   if (!fullName) return 'User';
   const parts = fullName.trim().split(' ');
@@ -71,15 +69,23 @@ export default function Home() {
             approved_at: m.purchase_date,
           }));
       }
-    } catch {}
-    return DUMMY_RECENT;
+    } catch { }
+    return [];
   });
   const [showNotif, setShowNotif] = useState(false);
   const [notifCity, setNotifCity] = useState('Dhaka');
   const { settings } = useSiteSettings();
+  const [userReviews, setUserReviews] = useState([]);
 
   useEffect(() => {
     document.title = 'ChessPremiumBD — Chess.com Diamond at Half Price in Bangladesh';
+
+    // Load approved reviews
+    try {
+      const stored = JSON.parse(localStorage.getItem('chess_reviews') || '[]');
+      const approved = stored.filter(r => r.status === 'approved');
+      setUserReviews(approved);
+    } catch { }
   }, []);
 
   // Make Recent Members list incredibly reactive
@@ -90,12 +96,12 @@ export default function Home() {
         if (stored && stored.length > 0) {
           setRecentMembers(
             stored.filter(m => m.purchase_date)
-                  .sort((a, b) => new Date(b.purchase_date) - new Date(a.purchase_date))
-                  .slice(0, 6)
-                  .map(m => ({ id: m.id, name: m.name, chess_username: m.chess_username, approved_at: m.purchase_date }))
+              .sort((a, b) => new Date(b.purchase_date) - new Date(a.purchase_date))
+              .slice(0, 6)
+              .map(m => ({ id: m.id, name: m.name, chess_username: m.chess_username, approved_at: m.purchase_date }))
           );
         }
-      } catch {}
+      } catch { }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
@@ -125,18 +131,7 @@ export default function Home() {
   return (
     <div className="selection:bg-[#81b64c] selection:text-[#262421]">
 
-      {/* ── WhatsApp Float ─────────────────── */}
-      <a
-        href={`https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=Hi%2C%20I%20want%20Chess.com%20Diamond.`}
-        target="_blank"
-        rel="noopener noreferrer"
-        id="whatsapp-float"
-        aria-label="Chat on WhatsApp"
-        className="fixed bottom-8 right-6 z-50 bg-[#25D366] hover:bg-[#20ba56] text-white px-5 py-3.5 rounded-full shadow-2xl flex items-center gap-2.5 font-bold transition-all transform hover:-translate-y-1 group active:scale-95"
-      >
-        <MessageCircle className="w-5 h-5 fill-current" />
-        <span className="hidden sm:inline text-sm">Chat with us</span>
-      </a>
+
 
       {/* ── Notification Popup ──────────────── */}
       {showNotif && settings.show_toaster !== false && (
@@ -265,8 +260,11 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
                     <span className="text-5xl font-black text-[#81b64c] tracking-tighter">৳{settings.price.toLocaleString()}</span>
-                    <span className="text-[#c3c3c0] text-base font-semibold">/ year</span>
-                    <span className="inline-flex items-center justify-center text-[10px] font-black text-[#ffbf61] uppercase tracking-wider bg-[#ffbf61]/10 border border-[#ffbf61]/20 px-2 py-1 rounded-full whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-[#c3c3c0] text-xs font-bold uppercase tracking-widest leading-none">per year</span>
+                      <span className="text-[#81b64c] text-sm font-black tracking-tight mt-0.5">৳{Math.floor(settings.price / 12).toLocaleString()}/month</span>
+                    </div>
+                    <span className="inline-flex items-center justify-center text-[10px] font-black text-[#ffbf61] uppercase tracking-wider bg-[#ffbf61]/10 border border-[#ffbf61]/20 px-2 py-1 rounded-full whitespace-nowrap ml-auto">
                       {Math.round((1 - settings.price / settings.original_price) * 100)}% OFF
                     </span>
                   </div>
@@ -309,7 +307,7 @@ export default function Home() {
                 </Link>
                 <p className="relative z-10 text-center text-xs text-[#c3c3c0]/60 mt-3">
                   <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 text-[#81b64c]" />
-                  Activated within 24h · No refunds on shared plans
+                  Activated within 5min · No refunds on shared plans
                 </p>
               </div>
             </motion.div>
@@ -325,7 +323,7 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Zap, val: '24h', desc: 'Activation Time', color: 'text-[#ffbf61]', bg: 'bg-[#4d3a24]/50' },
+              { icon: Zap, val: '5min', desc: 'Activation Time', color: 'text-[#ffbf61]', bg: 'bg-[#4d3a24]/50' },
               { icon: ShieldCheck, val: '100%', desc: 'Trusted & Safe', color: 'text-[#81b64c]', bg: 'bg-[#81b64c]/10' },
               { icon: Star, val: '500+', desc: 'Happy Players', color: 'text-blue-400', bg: 'bg-blue-400/10' },
               { icon: Crown, val: '40%', desc: 'Price Discount', color: 'text-[#81b64c]', bg: 'bg-[#81b64c]/10' },
@@ -361,7 +359,7 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
-              { step: '01', title: 'Send Money via bKash', desc: 'Send ৳1499 to our bKash number 01XXXXXXXXX. Save the Transaction ID (TrxID).', color: '#e2136e' },
+              { step: '01', title: 'Send Money via bKash', desc: `Send ৳${settings.price.toLocaleString()} to our bKash number ${settings.bkash_number}. Save the Transaction ID (TrxID).`, color: '#e2136e' },
               { step: '02', title: 'Fill the Form', desc: 'Submit your Chess.com username, mobile, email, and the bKash TrxID through our form.', color: '#81b64c' },
               { step: '03', title: 'Get Activated!', desc: 'We verify your payment and upgrade your account within 24 hours. Start playing!', color: '#ffbf61' },
             ].map((item, i) => (
@@ -392,6 +390,65 @@ export default function Home() {
             >
               Learn more <ArrowRight className="w-4 h-4" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════
+          TESTIMONIALS / REVIEWS
+      ══════════════════════════════════════ */}
+      <section className="py-16 bg-[#1e1c1a] border-t border-[#403d39]">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-2">
+              Don't Just Take <span className="text-[#81b64c]">Our Word</span> For It
+            </h2>
+            <div className="flex justify-center flex-wrap gap-1 text-[#ffbf61] mb-2">
+              <Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" /><Star className="w-5 h-5 fill-current" />
+            </div>
+            <p className="text-[#c3c3c0] max-w-md mx-auto text-sm">Real reviews from our chess community in Bangladesh.</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+            {(userReviews.length > 0 ? userReviews : REVIEWS).map((review, i) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-[#262421] p-6 rounded-2xl border border-[#403d39] hover:border-[#81b64c]/40 transition-colors relative"
+              >
+                <div className="text-4xl text-[#81b64c] opacity-20 absolute top-4 left-4 font-serif">"</div>
+                <div className="relative z-10">
+                  <p className="text-[#c3c3c0] text-sm leading-relaxed mb-5 italic">"{review.text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs ${review.color || 'bg-[#81b64c]'}`}>
+                      {(review.author || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-xs">{review.author}</p>
+                      <div className="flex text-[#ffbf61] gap-0.5 mt-0.5">
+                        {[...Array(5)].map((_, si) => (
+                          <Star key={si} className={`w-2.5 h-2.5 ${si < (review.stars || 5) ? 'fill-current' : 'opacity-20'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Write a review CTA */}
+          <div className="text-center mt-12">
+            <p className="text-[#c3c3c0] text-sm mb-4 italic">Enjoyed our service? Share your thoughts!</p>
+            <button
+              onClick={() => document.getElementById('review-form-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[#81b64c] font-bold hover:underline flex items-center gap-1.5 mx-auto text-sm"
+            >
+              Write a Review <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>
@@ -556,6 +613,104 @@ export default function Home() {
         </section>
       )}
 
+      {/* ══════════════════════════════════════
+          WRITE A REVIEW FORM
+      ══════════════════════════════════════ */}
+      <section className="py-20 bg-[#262421] border-t border-[#403d39]" id="review-form-section">
+        <div className="container mx-auto px-4 max-w-xl text-center">
+          <div className="mb-8">
+            <div className="w-16 h-16 bg-[#81b64c]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#81b64c]/20">
+              <Star className="w-8 h-8 text-[#ffbf61] fill-current" />
+            </div>
+            <h2 className="text-3xl font-black text-white">Write a <span className="text-[#81b64c]">Review</span></h2>
+            <p className="text-[#c3c3c0] text-sm mt-2">Help other chess players with your honest feedback.</p>
+          </div>
+
+          <ReviewForm />
+        </div>
+      </section>
+
     </div>
+  );
+}
+
+// Sub-component for cleanliness
+function ReviewForm() {
+  const [stars, setStars] = useState(5);
+  const [formData, setFormData] = useState({ author: '', text: '' });
+  const [isSent, setIsSent] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.author || !formData.text) return setIsError(true);
+
+    try {
+      const review = {
+        ...formData,
+        stars,
+        id: 'rev_' + Date.now(),
+        status: 'pending',
+        created_at: new Date().toISOString()
+      };
+
+      const stored = JSON.parse(localStorage.getItem('chess_reviews') || '[]');
+      localStorage.setItem('chess_reviews', JSON.stringify([review, ...stored]));
+      setIsSent(true);
+    } catch {
+      alert('Error saving review. Please try again.');
+    }
+  };
+
+  if (isSent) {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="p-10 bg-[#312e2b] rounded-3xl border border-[#81b64c]/30">
+        <CheckCircle2 className="w-12 h-12 text-[#81b64c] mx-auto mb-4" />
+        <h3 className="text-xl font-black text-white mb-2">Thank you!</h3>
+        <p className="text-sm text-[#c3c3c0]">Your review has been submitted for approval. Once approved, it will appear on the homepage.</p>
+        <button onClick={() => setIsSent(false)} className="mt-6 text-xs font-bold text-[#81b64c] hover:underline">Submit another review</button>
+      </motion.div>
+    );
+  }
+
+  const inputCls = "w-full px-4 py-3 bg-[#1e1c1a] border border-[#403d39] rounded-xl text-white outline-none focus:ring-1 focus:ring-[#81b64c] transition-all placeholder:text-[#555] text-sm";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5 text-left bg-[#1e1c1a] p-6 rounded-3xl border border-[#403d39]">
+      {isError && !formData.author && <p className="text-red-400 text-xs font-bold">Please fill in all fields.</p>}
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-[#666] uppercase tracking-widest ml-1">Your Name</label>
+        <input
+          type="text" placeholder="John Doe"
+          className={inputCls}
+          value={formData.author} onChange={e => setFormData({ ...formData, author: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-[#666] uppercase tracking-widest ml-1">Rating</label>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map(nu => (
+            <button key={nu} type="button" onClick={() => setStars(nu)} className="transition-transform active:scale-90">
+              <Star className={`w-6 h-6 ${nu <= stars ? 'text-[#ffbf61] fill-current' : 'text-[#333]'}`} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-[#666] uppercase tracking-widest ml-1">Message</label>
+        <textarea
+          placeholder="I got my Diamond instantly! Best service in BD..."
+          rows={3} className={`${inputCls} resize-none`}
+          value={formData.text} onChange={e => setFormData({ ...formData, text: e.target.value })}
+        />
+      </div>
+
+      <button type="submit" className="w-full py-4 bg-[#81b64c] text-black rounded-xl font-black text-sm hover:bg-[#95c660] transition-all shadow-[0_5px_0_rgba(104,151,59,1)] active:translate-y-1 active:shadow-none">
+        Submit Review
+      </button>
+    </form>
   );
 }

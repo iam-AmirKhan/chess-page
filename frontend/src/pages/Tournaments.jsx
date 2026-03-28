@@ -18,51 +18,7 @@ function getStatus(expiryDate) {
   } catch { return 'expired'; }
 }
 
-// Dummy tournaments as seed data
-const DUMMY_TOURNAMENTS = [
-  {
-    id: 'demo_t1',
-    title: 'ChessPremiumBD Spring Open 2026',
-    description: 'Monthly blitz tournament open to all Diamond members. Prizes for top 3 finishers!',
-    game_type: 'Blitz (3+2)',
-    prize: '৳5,000 Prize Pool',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-    max_players: 64,
-    registered: 23,
-    join_link: 'https://chess.com/tournament/chesspremiumbd-spring',
-    rules: 'Diamond members only. Standard FIDE rules apply.',
-    published: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'demo_t2',
-    title: 'Weekend Rapid Championship',
-    description: 'Rapid format weekend tournament for competitive players. Win prizes and bragging rights!',
-    game_type: 'Rapid (10+5)',
-    prize: '৳2,500 Prize Pool',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
-    max_players: 32,
-    registered: 31,
-    join_link: 'https://chess.com/tournament/chesspremiumbd-rapid',
-    rules: 'Open to all ChessPremiumBD members.',
-    published: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'demo_t3',
-    title: 'Beginner Friendly Bullet Battle',
-    description: 'Fast-paced bullet chess for beginners. 1+0 format. Come practice and have fun!',
-    game_type: 'Bullet (1+0)',
-    prize: 'Certificate + Recognition',
-    date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    max_players: 50,
-    registered: 50,
-    join_link: 'https://chess.com/tournament/chesspremiumbd-bullet',
-    rules: 'Open to anyone. Rated under 1200 preferred.',
-    published: true,
-    created_at: new Date().toISOString(),
-  },
-];
+// ── Dummy tournaments removed ───────────────────────────
 
 const PRESET_AMOUNTS = [20, 50, 100, 200];
 
@@ -166,7 +122,7 @@ function TournamentCard({ t, index }) {
 }
 
 // ── 1v1 Challenge Section ──────────────────────────────────────────────────────
-function ChallengeSection({ settings, verifiedUsername }) {
+function ChallengeSection({ settings }) {
   const { challenges, addChallenge, updateChallenge, deleteChallenge } = useSiteSettings();
   const [searchParams, setSearchParams] = useSearchParams();
   const [betAmount, setBetAmount] = useState(50);
@@ -174,6 +130,8 @@ function ChallengeSection({ settings, verifiedUsername }) {
   const [createdChallenge, setCreatedChallenge] = useState(null);
   const [copied, setCopied] = useState(false);
   const [acceptModal, setAcceptModal] = useState(null);
+  const [creatorName, setCreatorName] = useState('');
+  const [acceptorName, setAcceptorName] = useState('');
 
   const platformCut = settings.platform_cut_pct ?? 20;
   const presets = settings.challenge_preset_amounts || [20, 50, 100, 200];
@@ -186,9 +144,10 @@ function ChallengeSection({ settings, verifiedUsername }) {
   const linkedChallenge = challengeId ? challenges.find(c => c.id === challengeId) : null;
 
   const handleCreateChallenge = () => {
+    if (!creatorName.trim()) { alert('Enter your Chess.com username'); return; }
     if (finalAmount < 10) { alert('Minimum bet is ৳10'); return; }
     const ch = addChallenge({
-      creator: verifiedUsername,
+      creator: creatorName.trim(),
       amount: finalAmount,
       platform_cut: platformCut,
     });
@@ -200,12 +159,14 @@ function ChallengeSection({ settings, verifiedUsername }) {
   };
 
   const confirmAccept = () => {
-    if (verifiedUsername === acceptModal.creator) {
+    if (!acceptorName.trim()) { alert('Enter your Chess.com username'); return; }
+    if (acceptorName.trim().toLowerCase() === acceptModal.creator.toLowerCase()) {
       alert("You cannot accept your own challenge!");
       return;
     }
-    updateChallenge(acceptModal.id, { status: 'accepted', acceptor: verifiedUsername, accepted_at: new Date().toISOString() });
+    updateChallenge(acceptModal.id, { status: 'accepted', acceptor: acceptorName.trim(), accepted_at: new Date().toISOString() });
     setAcceptModal(null);
+    setAcceptorName('');
     searchParams.delete('challenge');
     setSearchParams(searchParams);
   };
@@ -275,6 +236,9 @@ function ChallengeSection({ settings, verifiedUsername }) {
 
             {/* Preset amounts */}
             <div className="mb-4">
+              <label className="text-[10px] font-black text-[#c3c3c0] uppercase tracking-widest block mb-1.5">Your Chess.com Username</label>
+              <input type="text" value={creatorName} onChange={e => setCreatorName(e.target.value)} placeholder="e.g. GothamChess" className="w-full px-3 py-2 bg-[#312e2b] border border-[#403d39] text-white text-sm rounded-lg focus:ring-2 focus:ring-[#81b64c] outline-none transition-all placeholder:text-[#555] mb-4" />
+
               <label className="text-[10px] font-black text-[#c3c3c0] uppercase tracking-widest block mb-2">Choose Bet Amount (৳)</label>
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {presets.map(amt => (
@@ -454,30 +418,37 @@ function ChallengeSection({ settings, verifiedUsername }) {
                 </div>
               </div>
 
-              <div className="bg-[#252b33] border border-[#323a44] rounded-xl p-4 mb-5 space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#6a7a8e]">Bet amount</span>
-                  <span className="text-white font-bold">৳{acceptModal.amount}</span>
+              <div className="bg-[#252b33] border border-[#323a44] rounded-xl p-4 mb-5 space-y-3">
+                <div>
+                  <label className="text-[10px] font-black text-[#6a7a8e] uppercase tracking-widest block mb-1.5 align-middle">Your Chess.com Username</label>
+                  <input type="text" value={acceptorName} onChange={e => setAcceptorName(e.target.value)} placeholder="e.g. Hikaru" className="w-full px-3 py-2 bg-[#1a1f26] border border-[#323a44] text-white text-sm rounded-lg focus:ring-1 focus:ring-[#81b64c] outline-none" />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#6a7a8e]">Platform cut ({platformCut}%)</span>
-                  <span className="text-red-400">−৳{Math.round(acceptModal.amount * 2 * platformCut / 100)}</span>
-                </div>
-                <div className="border-t border-[#323a44] pt-2 flex justify-between">
-                  <span className="text-white font-bold text-sm">Winner takes</span>
-                  <span className="text-[#81b64c] font-black">৳{Math.round(acceptModal.amount * 2 * (1 - platformCut / 100))}</span>
+                <div className="border-t border-[#323a44] pt-2 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#6a7a8e]">Bet amount</span>
+                    <span className="text-white font-bold">৳{acceptModal.amount}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#6a7a8e]">Platform cut ({platformCut}%)</span>
+                    <span className="text-red-400">−৳{Math.round(acceptModal.amount * 2 * platformCut / 100)}</span>
+                  </div>
+                  <div className="border-t border-[#323a44] pt-2 flex justify-between">
+                    <span className="text-white font-bold text-sm">Winner takes</span>
+                    <span className="text-[#81b64c] font-black">৳{Math.round(acceptModal.amount * 2 * (1 - platformCut / 100))}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={confirmAccept}
-                  className="flex-1 py-3 bg-[#81b64c] text-black rounded-xl font-black text-sm hover:bg-[#95c660] transition-all"
+                  className="flex-1 py-3 bg-[#81b64c] text-black rounded-xl font-black text-sm hover:bg-[#95c660] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!acceptorName.trim()}
                 >
                   Confirm & Accept
                 </button>
                 <button
-                  onClick={() => setAcceptModal(null)}
+                  onClick={() => { setAcceptModal(null); setAcceptorName(''); }}
                   className="px-4 py-3 bg-[#252b33] border border-[#323a44] text-[#6a7a8e] rounded-xl font-bold text-sm hover:text-white transition-all"
                 >
                   Cancel
@@ -493,34 +464,9 @@ function ChallengeSection({ settings, verifiedUsername }) {
 
 export default function Tournaments() {
   const { tournaments: adminTournaments, settings } = useSiteSettings();
-  const [verificationInput, setVerificationInput] = useState('');
   
-  const [verifiedUser, setVerifiedUser] = useState(() => {
-    const raw = localStorage.getItem('chess_verified');
-    if (!raw) return null;
-    try {
-      const members = JSON.parse(localStorage.getItem('chess_members') || '[]');
-      return members.find(m => m.chess_username?.toLowerCase() === raw.toLowerCase() && getStatus(m.expiry_date) === 'active') || null;
-    } catch { return null; }
-  });
-
-  const handleVerify = (e) => {
-    e.preventDefault();
-    const val = verificationInput.trim();
-    if (!val) return;
-    const members = JSON.parse(localStorage.getItem('chess_members') || '[]');
-    const match = members.find(m => m.chess_username?.toLowerCase() === val.toLowerCase() && getStatus(m.expiry_date) === 'active');
-    if (match) {
-      localStorage.setItem('chess_verified', match.chess_username);
-      setVerifiedUser(match);
-    } else {
-      alert('No active Diamond membership found for this username. Verify spelling or purchase access.');
-    }
-  };
-
   const allTournaments = [
     ...adminTournaments.filter(t => t.published),
-    ...DUMMY_TOURNAMENTS,
   ];
 
   const upcoming = allTournaments.filter(t => !isPast(new Date(t.date)));
@@ -539,11 +485,11 @@ export default function Tournaments() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#262421] border border-[#403d39] text-[#c3c3c0] rounded-full text-xs font-black uppercase tracking-wider mb-4">
             <Trophy className="w-3.5 h-3.5 text-[#ffbf61]" />
             Tournaments
-            <span className="px-1.5 py-0.5 bg-[#ffbf61]/15 border border-[#ffbf61]/30 text-[#ffbf61] text-[9px] font-black rounded-full">BETA</span>
+            <span className="ml-1.5 px-2 py-0.5 bg-[#ffbf61]/10 border border-[#ffbf61]/30 text-[#ffbf61] text-[8px] font-black rounded-md tracking-widest uppercase">BETA</span>
           </div>
-          <h1 className="text-4xl font-black text-white mb-3">
+          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight">
             <span className="text-[#ffbf61]">Chess</span> Tournaments
-            <span className="ml-3 inline-flex items-center px-1.5 py-0.5 bg-[#ffbf61]/15 border border-[#ffbf61]/30 text-[#ffbf61] text-[9px] font-black rounded-full uppercase tracking-widest align-middle">BETA</span>
+            <span className="ml-3 inline-flex items-center px-2 py-0.5 bg-[#ffbf61]/20 border border-[#ffbf61]/40 text-[#ffbf61] text-[10px] font-black rounded-lg uppercase tracking-[0.2em] align-middle shadow-[0_0_15px_rgba(255,191,97,0.15)]">BETA</span>
           </h1>
           <p className="text-[#c3c3c0] max-w-md mx-auto mb-5">
             Join exciting tournaments organized for ChessPremiumBD members. Compete, win prizes, and climb the rankings!
@@ -605,42 +551,13 @@ export default function Tournaments() {
           </div>
         )}
 
-        {/* Diamond Restricted Section */}
+        {/* Diamond Restricted Section (No longer restricted but toggled by admin) */}
         {(settings.show_1v1_section || settings.show_bot_section !== false) && (
           <div className="border-t border-[#403d39] my-10 pt-10">
-            {!verifiedUser ? (
-              <div className="max-w-md mx-auto bg-[#262421] border border-[#81b64c]/40 shadow-[0_0_40px_rgba(129,182,76,0.1)] rounded-3xl p-8 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#81b64c] to-transparent opacity-50" />
-                <Crown className="w-14 h-14 text-[#81b64c] mx-auto mb-4 drop-shadow-[0_0_15px_rgba(129,182,76,0.5)]" />
-                <h2 className="text-2xl font-black text-white mb-2">Diamond Access Required</h2>
-                <p className="text-[#c3c3c0] text-sm mb-6">Enter your approved Chess.com username to unlock 1v1 Betting and Beat the Bot matches.</p>
-                <form onSubmit={handleVerify} className="space-y-4 relative z-10">
-                  <input type="text" value={verificationInput} onChange={e => setVerificationInput(e.target.value)} placeholder="Chess.com Username" className="w-full px-4 py-3.5 bg-[#1a1f26] border border-[#2a3340] text-white rounded-xl focus:ring-2 focus:border-transparent focus:ring-[#81b64c] outline-none text-center font-bold placeholder-[#555]" />
-                  <button type="submit" className="w-full py-3.5 bg-[#81b64c] text-black font-black rounded-xl hover:bg-[#95c660] transition-all shadow-[0_4px_0_rgba(104,151,59,0.5)] active:translate-y-1 active:shadow-none flex items-center justify-center gap-2">
-                    <Check className="w-5 h-5" /> Verify Membership
-                  </button>
-                </form>
-                <Link to="/purchase" className="inline-block mt-6 text-xs text-[#c3c3c0] hover:text-white underline decoration-[#555] hover:decoration-white transition-colors relative z-10">Don't have Diamond? Buy it here</Link>
-              </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-[#262421] border border-[#403d39] p-4 rounded-2xl">
-                   <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-[#81b64c]/10 text-[#81b64c] rounded-xl border border-[#81b64c]/20 flex items-center justify-center font-black text-xl shadow-[0_0_15px_rgba(129,182,76,0.15)]">
-                       {verifiedUser.name?.charAt(0) || 'D'}
-                     </div>
-                     <div>
-                       <p className="font-black text-white">Diamond Access <span className="text-[#81b64c] ml-1 text-[10px] bg-[#81b64c]/10 px-2 py-0.5 rounded border border-[#81b64c]/20 uppercase tracking-widest align-middle">Active</span></p>
-                       <p className="text-xs text-[#c3c3c0] mt-1">Logged in as <span className="font-mono text-white bg-[#1a1f26] border border-[#2a3340] px-1.5 py-0.5 rounded">{verifiedUser.chess_username}</span></p>
-                     </div>
-                   </div>
-                   <button onClick={() => { localStorage.removeItem('chess_verified'); setVerifiedUser(null); }} className="px-4 py-2 bg-[#1a1f26] border border-[#2a3340] text-xs font-bold text-[#c3c3c0] hover:text-white hover:bg-[#20252b] rounded-xl transition-all h-fit shadow-sm">Log Out</button>
-                </div>
-
-                {settings.show_1v1_section && <ChallengeSection settings={settings} verifiedUsername={verifiedUser.chess_username} />}
-                {settings.show_bot_section !== false && <BeatTheBot />}
-              </motion.div>
-            )}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+              {settings.show_1v1_section && <ChallengeSection settings={settings} />}
+              {settings.show_bot_section !== false && <BeatTheBot />}
+            </motion.div>
           </div>
         )}
       </div>
