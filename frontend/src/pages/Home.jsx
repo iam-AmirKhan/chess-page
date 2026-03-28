@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSiteSettings } from '../context/SiteSettingsContext';
-import BangladeshMap from '../components/BangladeshMap';
 
 const CITIES = ['Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Comilla', 'Gazipur'];
 
@@ -75,11 +74,25 @@ export default function Home() {
   });
   const [showNotif, setShowNotif] = useState(false);
   const [notifCity, setNotifCity] = useState('Dhaka');
-  const { settings } = useSiteSettings();
+  const { settings, updateSettings } = useSiteSettings();
   const [userReviews, setUserReviews] = useState([]);
+  const [allMembers, setAllMembers] = useState([]);
 
   useEffect(() => {
     document.title = 'ChessPremiumBD — Chess.com Diamond at Half Price in Bangladesh';
+
+    // Load ALL members for the map stats
+    try {
+      const stored = JSON.parse(localStorage.getItem('chess_members') || '[]');
+      setAllMembers(stored.filter(m => m.purchase_date));
+    } catch { }
+
+    // Increment visitor count (once per session)
+    if (!sessionStorage.getItem('has_visited')) {
+      const currentCount = settings.visitor_count || 1250;
+      updateSettings({ visitor_count: currentCount + 1 });
+      sessionStorage.setItem('has_visited', 'true');
+    }
 
     // Load approved reviews
     try {
@@ -524,61 +537,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════
-          COMMUNITY MAP SECTION
-      ══════════════════════ */}
-      <section className="py-20 bg-[#1a1c1e] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#81b64c]/20 to-transparent" />
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#81b64c]/10 border border-[#81b64c]/20 text-[#81b64c] text-[10px] font-black uppercase tracking-widest mb-6">
-                <ShieldCheck className="w-3.5 h-3.5" /> Trusted Across Bangladesh
-              </div>
-              <h2 className="text-4xl sm:text-5xl font-black text-white mb-6 leading-[1.1]">
-                Serving Players from <br />
-                <span className="text-[#81b64c]">Every Corner</span> of BD
-              </h2>
-              <p className="text-[#c3c3c0] text-lg leading-relaxed mb-8 max-w-xl">
-                From Dhaka to Chittagong, Sylhet to Khulna—we've activated thousands of Diamond memberships for chess enthusiasts nationwide. Our automated system ensures instant delivery no matter where you are.
-              </p>
-              
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className="p-4 rounded-2xl bg-[#262421] border border-[#403d39]">
-                  <p className="text-3xl font-black text-white mb-1">500+</p>
-                  <p className="text-xs font-bold text-[#6a7a8e] uppercase tracking-wider">Active Members</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#262421] border border-[#403d39]">
-                  <p className="text-3xl font-black text-[#81b64c] mb-1">10+</p>
-                  <p className="text-xs font-bold text-[#6a7a8e] uppercase tracking-wider">Major Cities</p>
-                </div>
-              </div>
-              
-              <Link to="/members" className="inline-flex items-center gap-2 text-[#81b64c] font-black hover:gap-3 transition-all">
-                View Recent Activity <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="relative"
-            >
-              <div className="absolute -inset-4 bg-[#81b64c]/5 blur-3xl rounded-full" />
-              <div className="relative bg-[#262421]/40 border border-[#403d39]/50 p-8 rounded-[2rem] backdrop-blur-sm">
-                <BangladeshMap />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+
+
+
 
       {/* ══════════════════════
           COMMUNITY SECTION

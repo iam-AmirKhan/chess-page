@@ -292,8 +292,13 @@ export default function AdminDashboard() {
     updatePending(prev => prev.filter(p => p.id !== id));
   };
   const extendMember = (member) => {
-    const days = parseInt(window.prompt('Extend by how many days?', '365'));
-    if (!days || isNaN(days)) return;
+    const input = window.prompt(`Extend ${member.name}'s membership by how many days?`, '365');
+    if (input === null) return;
+    const days = parseInt(input);
+    if (isNaN(days) || days <= 0) {
+      alert('Please enter a valid positive number of days.');
+      return;
+    }
     const base = new Date(member.expiry_date) > new Date() ? new Date(member.expiry_date) : new Date();
     updateMembers(prev => prev.map(m => m.id === member.id ? { ...m, expiry_date: addDays(base, days).toISOString() } : m));
   };
@@ -531,7 +536,12 @@ export default function AdminDashboard() {
                           <p className="text-xs text-[#4a5668] font-mono">{m.chess_username}{m.district ? ` · ${m.district}` : ''}</p>
                         </div>
                       </div>
-                      <Badge status={getStatus(m.expiry_date)} />
+                      <div className="flex items-center gap-2">
+                        <Badge status={getStatus(m.expiry_date)} />
+                        <button onClick={() => extendMember(m)} title="Extend Expiry" className="p-1 px-2.5 bg-[#ffbf61]/10 text-[#ffbf61] border border-[#ffbf61]/20 rounded-lg hover:bg-[#ffbf61] hover:text-black transition-all text-[10px] font-black uppercase">
+                          Extend
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1080,11 +1090,16 @@ export default function AdminDashboard() {
                             ) : (
                               <ul className="space-y-1.5 text-xs text-[#c3c3c0]">
                                 {assignedMembers.map(m => (
-                                  <li key={m.id} className="flex justify-between items-center group/item">
+                                  <li key={m.id} className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded transition-colors">
                                     <span className={getStatus(m.expiry_date) === 'expired' ? 'text-red-400/80 line-through' : ''}>{m.chess_username}</span>
-                                    <span className="text-[10px] text-[#6a7a8e] opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                      expires {fmt(m.expiry_date)}
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                      <button onClick={() => extendMember(m)} className="text-[10px] text-[#ffbf61] hover:underline opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                        Extend
+                                      </button>
+                                      <span className="text-[10px] text-[#6a7a8e] opacity-40 group-hover/item:opacity-100 transition-opacity">
+                                        {fmt(m.expiry_date)}
+                                      </span>
+                                    </div>
                                   </li>
                                 ))}
                               </ul>
@@ -1449,6 +1464,33 @@ export default function AdminDashboard() {
                       placeholder="BEATTHEBOT10"
                     />
                     <p className="text-[11px] text-[#4a5668] mt-1">This code is shown to users who beat the bot. They can use it on the purchase page.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Display & Growth Settings */}
+              <div className={`${CARD} rounded-xl p-5`}>
+                <h3 className="font-black text-white mb-4 flex items-center gap-2 text-sm">
+                  <span className="text-sm">📈</span> Display & Growth Settings
+                </h3>
+                <div className="space-y-4">
+                  <Toggle
+                    checked={settingsForm.show_visitors !== false}
+                    onChange={v => setSettingsForm(p => ({ ...p, show_visitors: v }))}
+                    label="Show Total Visitors section on Homepage"
+                  />
+                  <div>
+                    <label className="text-xs font-bold text-[#6a7a8e] uppercase tracking-wider block mb-1.5">Starting Visitor Count (Initial Value)</label>
+                    <input
+                      type="number"
+                      value={settingsForm.visitor_count || 0}
+                      onChange={e => setSettingsForm(p => ({ ...p, visitor_count: parseInt(e.target.value) || 0 }))}
+                      className={`${INPUT_CLS} font-mono`}
+                      placeholder="1250"
+                    />
+                    <p className="text-[10px] text-[#6a7a8e] mt-1.5 leading-relaxed">
+                      * This value increments by 1 for every unique session visitor on the homepage.
+                    </p>
                   </div>
                 </div>
               </div>

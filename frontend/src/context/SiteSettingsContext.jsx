@@ -32,6 +32,8 @@ const DEFAULT_SETTINGS = {
   show_toaster: true,
   toaster_message: 'Someone from {city} just got Diamond! 🎉',
   show_sponsor: false,
+  show_visitors: true,
+  visitor_count: 1250,
 };
 
 const DEFAULT_VISIBILITY = {
