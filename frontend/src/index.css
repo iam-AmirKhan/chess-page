@@ -2,12 +2,365 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    background-color: #312e2b;
-    color: #ffffff;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-family: serif;
+/* ============================================
+   DESIGN TOKENS & BASE STYLES
+   ============================================ */
+:root {
+  --chess-bg: #312e2b;
+  --chess-surface: #262421;
+  --chess-surface-2: #2a2825;
+  --chess-border: #403d39;
+  --chess-green: #81b64c;
+  --chess-green-light: #95c660;
+  --chess-green-dark: #68973b;
+  --chess-text: #ffffff;
+  --chess-muted: #c3c3c0;
+  --chess-gold: #ffbf61;
+  --chess-gold-bg: #4d3a24;
+  --chess-bkash: #e2136e;
+  --chess-red: #ff6b6b;
+}
+
+/* ============================================
+   FONT SETUP
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--chess-bg);
+  color: var(--chess-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--chess-green);
+  color: var(--chess-surface);
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--chess-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--chess-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--chess-green);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-green {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(129, 182, 76, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(129, 182, 76, 0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes strikethrough {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes notifSlide {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-notif-slide {
+  animation: notifSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-pulse-green {
+  animation: pulse-green 2s infinite;
+}
+
+/* Staggered fade in for list items */
+.stagger-1 {
+  animation-delay: 0.1s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+/* ============================================
+   GLASSMORPHISM HELPER
+   ============================================ */
+.glass {
+  background: rgba(38, 36, 33, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(64, 61, 57, 0.5);
+}
+
+/* ============================================
+   CHESS BOARD PATTERN (Background helper)
+   ============================================ */
+.chess-pattern {
+  background-image:
+    repeating-conic-gradient(rgba(129, 182, 76, 0.03) 0% 25%, transparent 0% 50%);
+  background-size: 48px 48px;
+}
+
+/* ============================================
+   GRADIENT SHIMMER TEXT
+   ============================================ */
+.shimmer-text {
+  background: linear-gradient(90deg,
+      var(--chess-green) 0%,
+      var(--chess-gold) 50%,
+      var(--chess-green) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ============================================
+   BUTTON BASE STYLES
+   ============================================ */
+.btn-primary {
+  @apply px-8 py-4 rounded-lg font-extrabold text-[#262421] bg-[#81b64c] hover:bg-[#95c660] transition-all transform hover:-translate-y-0.5 shadow-[0_5px_0_rgba(104,151,59,1)] active:shadow-none active:translate-y-1;
+}
+
+.btn-secondary {
+  @apply px-8 py-4 rounded-lg font-extrabold text-white border border-[#403d39] bg-[#312e2b] hover:border-[#81b64c]/50 hover:text-[#81b64c] transition-all;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.chess-card {
+  @apply bg-[#262421] rounded-lg border border-[#403d39] shadow-xl;
+}
+
+/* ============================================
+   INPUT STYLES
+   ============================================ */
+.chess-input {
+  @apply w-full px-5 py-4 rounded-lg bg-[#312e2b] border border-[#403d39] text-white focus:ring-2 focus:ring-[#81b64c] focus:border-transparent outline-none transition-all placeholder:text-[#c3c3c0]/40 font-medium;
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+.badge-active {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(129, 182, 76, 0.1);
+  color: #81b64c;
+  border: 1px solid rgba(129, 182, 76, 0.25);
+  white-space: nowrap;
+}
+
+.badge-active::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #81b64c;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(129, 182, 76, 0.25);
+}
+
+.badge-expired {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.badge-expired::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f87171;
+  flex-shrink: 0;
+}
+
+.badge-pending {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.badge-pending::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fbbf24;
+  flex-shrink: 0;
 }
