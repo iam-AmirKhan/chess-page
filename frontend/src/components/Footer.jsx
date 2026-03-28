@@ -1,7 +1,7 @@
 // src/components/Footer.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, MessageCircle, ArrowRight, ShieldCheck, Users } from 'lucide-react';
+import { Crown, MessageCircle, ArrowRight, ShieldCheck, Users, Mail } from 'lucide-react';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 
 export default function Footer() {
@@ -112,6 +112,17 @@ export default function Footer() {
                   <div>
                     <p className="text-xs font-black text-white mb-0.5">Messenger Group</p>
                     <p className="text-[10px] text-[#c3c3c0]">Chat with other members</p>
+                  </div>
+                </a>
+
+                <a href="mailto:chesspremiumbd@gmail.com"
+                  className="flex items-center gap-3 p-3 bg-[#262421] border border-[#403d39] hover:border-amber-400/40 rounded-xl transition-all group">
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center group-hover:bg-amber-400 transition-colors">
+                    <Mail className="w-4 h-4 text-amber-400 group-hover:text-black" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-white mb-0.5">Email Support</p>
+                    <p className="text-[10px] text-[#c3c3c0]">chesspremiumbd@gmail.com</p>
                   </div>
                 </a>
               </div>
